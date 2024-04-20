@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from "./screens/HomeScreen";
-import MapScreen from "./screens/MapScreen";
+import MapScreen from "./screens/LandManagement/MapScreen";
 
 const Stack = createStackNavigator();
 
@@ -16,3 +16,4 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
