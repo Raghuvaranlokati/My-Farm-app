@@ -9,6 +9,10 @@ const HomeScreen = ({ navigation }) => {
         title="Go to Map Screen"
         onPress={() => navigation.navigate('Map')}
       />
+      <Button
+        title="Darani"
+        onPress={() => navigation.navigate('Language')}
+      />
     </View>
   );
 };
