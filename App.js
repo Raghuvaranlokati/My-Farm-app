@@ -5,7 +5,8 @@ import HomeScreen from "./screens/HomeScreen";
 import MapScreen from "./screens/LandManagement/MapScreen";
 import LanguageScreen from "./components/LanguageScreen"
 import WebViewScreen from './components/WebViewScreen';
-
+import SelectionScreenEn from './components/Selectionlag/SelectionScreenEn';
+import SelectionScreenTel from './components/Selectionlag/SelectionScreenTel';
 
 const Stack = createStackNavigator();
 
@@ -16,7 +17,9 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen}  />
         <Stack.Screen name="Map" component={MapScreen}  />
         <Stack.Screen name="Language" component={LanguageScreen} />
-        <Stack.Screen name="WebView" component={WebViewScreen} />
+        <Stack.Screen name="WebView" component={WebViewScreen}  options={{ headerShown: false }} />
+        <Stack.Screen name="SelectionScreenTel" component={SelectionScreenTel}  options={{ headerShown: false }} />
+        <Stack.Screen name="SelectionScreenEn" component={SelectionScreenEn}  options={{ headerShown: false }}/>
 
       </Stack.Navigator>
     </NavigationContainer>

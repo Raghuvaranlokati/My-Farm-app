@@ -3,13 +3,11 @@ import { Button, View, StyleSheet } from 'react-native';
 
 const LanguageScreen = ({ navigation }) => {
   const handleLanguageSelect = (lang) => {
-    let redirectUrl;
     if (lang === 'te') {
-      redirectUrl = 'https://dharani.telangana.gov.in/knowLandStatus?lang=te&null=';
+      navigation.navigate('SelectionScreenTel');
     } else if (lang === 'en') {
-      redirectUrl = 'https://dharani.telangana.gov.in/knowLandStatus?lang=en';
+      navigation.navigate('SelectionScreenEn');
     }
-    navigation.navigate('WebView', { uri: redirectUrl });
   };
 
   return (
