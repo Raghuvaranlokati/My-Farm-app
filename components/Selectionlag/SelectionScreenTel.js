@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, ImageBa
 const { width, height } = Dimensions.get('window');
 
 const DATA = [
-    { id: '1', name: 'Website 1', url: 'https://dharani.telangana.gov.in/agricultureHomepage?lang=te&csrf=' },
+    { id: '1', name: 'open', url: 'https://dharani.telangana.gov.in/agricultureHomepage?lang=te&csrf=' },
     // Add more website data as needed
 ];
 
@@ -20,7 +20,7 @@ const SelectionScreenEn = ({ navigation }) => {
     return (
 <ImageBackground source={{ uri: 'https://w0.peakpx.com/wallpaper/799/204/HD-wallpaper-farmers-agriculture-field-harvesting-farm-farmer-hard-working-workers-cultivation.jpg' }} style={styles.backgroundImage}>
             <View style={styles.container}>
-                <Text style={styles.title}>Select a Website</Text>
+                <Text style={styles.title}>భూమి రికార్డులు</Text>
                 <View style={styles.cardContainer}>
                     <FlatList
                         data={DATA}
