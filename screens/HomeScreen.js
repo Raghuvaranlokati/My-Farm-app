@@ -13,6 +13,11 @@ const HomeScreen = ({ navigation }) => {
         title="Darani"
         onPress={() => navigation.navigate('Language')}
       />
+      <Button
+        title="Weather"
+        onPress={() => navigation.navigate('Weather')}
+      />
+      
     </View>
   );
 };
