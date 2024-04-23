@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Linking, Animated, Easing } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Linking, Animated, Easing , ImageBackground } from 'react-native';
 import * as Location from 'expo-location';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from Expo icons
 import SearchScreen from "./SearchScreen";
 
 const API_KEY = '8a36c340baddd0b90a02ed68ec1e5e7b'; // Replace 'YOUR_API_KEY' with your actual API key from OpenWeatherMap
+const backgroundImage = require('../../assets/icon.png'); // Import your background image
 
 export default function WeatherScreen() {
   const [weatherData, setWeatherData] = useState(null);
@@ -95,6 +96,7 @@ export default function WeatherScreen() {
   };
 
   return (
+    <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.header}>
         <Text style={styles.cityName}>{cityName}</Text>
@@ -109,6 +111,16 @@ export default function WeatherScreen() {
             <Text style={styles.description}>{weatherData.weather[0].description}</Text>
           </View>
         </View>
+        
+        {forecastData.map((forecast, index) => (
+          <View key={index} style={styles.forecastItem}>
+            <Text style={styles.forecastDate}>{forecast.dt_txt.split(' ')[0].split('-').slice(-1)[0]}</Text>
+            <View style={styles.forecastDetails}>
+              <Text style={styles.forecastDescription}>{forecast.weather[0].description}</Text>
+              <Text style={styles.forecastTemperature}>{Math.round(forecast.main.temp - 273.15)}°C</Text>
+            </View>
+          </View>
+        ))}
         <View style={styles.todayWeatherCard}>
           <Text style={styles.todayWeatherTitle}>Today's Weather Details</Text>
           <View style={styles.todayWeatherDetails}>
@@ -132,17 +144,20 @@ export default function WeatherScreen() {
               <Text style={styles.weatherDetailLabel}>Air Pressure</Text>
               <Text style={styles.weatherDetailValue}>{weatherData.main.pressure} hPa</Text>
             </View>
-          </View>
-        </View>
-        {forecastData.map((forecast, index) => (
-          <View key={index} style={styles.forecastItem}>
-            <Text style={styles.forecastDate}>{forecast.dt_txt.split(' ')[0].split('-').slice(-1)[0]}</Text>
-            <View style={styles.forecastDetails}>
-              <Text style={styles.forecastDescription}>{forecast.weather[0].description}</Text>
-              <Text style={styles.forecastTemperature}>{Math.round(forecast.main.temp - 273.15)}°C</Text>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Rain %</Text>
+              <Text style={styles.weatherDetailValue}>{weatherData.rain ? weatherData.rain['1h'] : 0}%</Text>
+            </View>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Sunrise</Text>
+              <Text style={styles.weatherDetailValue}>{new Date(weatherData.sys.sunrise * 1000).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: true})}</Text>
+            </View>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Sunset</Text>
+              <Text style={styles.weatherDetailValue}>{new Date(weatherData.sys.sunset * 1000).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: true})}</Text>
             </View>
           </View>
-        ))}
+        </View>
       </ScrollView>
       <TouchableOpacity style={styles.infoButton} onPress={openInBrowser}>
         <Text style={styles.infoButtonText}>More Info</Text>
@@ -156,6 +171,7 @@ export default function WeatherScreen() {
         </View>
       </Modal>
     </Animated.View>
+    </ImageBackground>
   );
 }
 
@@ -273,5 +289,9 @@ const styles = StyleSheet.create({
     top: 20,
     right: 20,
   },
-});
 
+ backgroundImage: {
+    flex: 1,
+    resizeMode: 'cover', // or 'stretch'
+  },
+});

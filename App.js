@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from "./screens/HomeScreen";
 import MapScreen from "./screens/LandManagement/MapScreen";
-import LanguageScreen from "./components/LanguageScreen"
+import LanguageScreen from "./components/Selectionlag/LanguageScreen"
 import WebViewScreen from './components/WebViewScreen';
 import SelectionScreenEn from './components/Selectionlag/SelectionScreenEn';
 import SelectionScreenTel from './components/Selectionlag/SelectionScreenTel';
