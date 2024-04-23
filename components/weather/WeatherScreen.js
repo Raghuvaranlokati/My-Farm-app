@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Linking, Animated, Easing } from 'react-native';
 import * as Location from 'expo-location';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons'; // Import Ionicons from Expo icons
@@ -12,8 +12,9 @@ export default function WeatherScreen() {
   const [cityName, setCityName] = useState('');
   const [showSearch, setShowSearch] = useState(false); // State to control the visibility of the search modal
   const [forecastData, setForecastData] = useState(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
- useEffect(() => {
+  useEffect(() => {
     (async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
@@ -33,25 +34,33 @@ export default function WeatherScreen() {
         const city = cityResponse[0].city;
         setCityName(city);
 
-        // Fetch forecast data for the next 7 days
+        // Fetch forecast data for the next 5 days
         const forecastResponse = await axios.get(`http://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}`);
-        setForecastData(forecastResponse.data.list);
+        const filteredForecast = filterForecastData(forecastResponse.data.list);
+        setForecastData(filteredForecast);
+
+        // Fade in animation
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }).start();
       } catch (error) {
         console.error('Error fetching weather data:', error);
       }
     })();
   }, []);
 
-
-  const handleSearch = async (city) => {
-    try {
-      const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}`);
-      setWeatherData(response.data);
-      setCityName(city);
-      setShowSearch(false); // Close the search modal after submitting the search
-    } catch (error) {
-      console.error('Error fetching weather data:', error);
-    }
+  const filterForecastData = (forecastList) => {
+    const filteredForecast = {};
+    forecastList.forEach(item => {
+      const date = item.dt_txt.split(' ')[0].split('-').slice(-1)[0]; // Extract only the day part of the date
+      if (!filteredForecast[date]) {
+        filteredForecast[date] = item;
+      }
+    });
+    return Object.values(filteredForecast);
   };
 
   if (!weatherData || !forecastData) {
@@ -63,16 +72,30 @@ export default function WeatherScreen() {
   }
 
   const temperature = Math.round(weatherData.main.temp - 273.15); // Convert temperature to Celsius
-  const apparentTemperature = Math.round(weatherData.main.feels_like - 273.15);
-  const humidity = weatherData.main.humidity;
-  const windSpeed = weatherData.wind.speed;
-  const windDirection = getWindDirection(weatherData.wind.deg);
-  const uvIndex = weatherData.uv;
-  const visibility = weatherData.visibility / 1000; // Convert visibility to km
-  const airPressure = weatherData.main.pressure;
+
+  const openInBrowser = () => {
+    Linking.openURL('https://weather.com/en-GB/weather/tenday/l/f397efa5ffdce3a2d19b6e26e0ac0f79b55cce9157240e8208b98c596f3235a2?par=oppo_widget&frontCode=2.0');
+  };
+
+  const handleSearch = async (city) => {
+    try {
+      const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}`);
+      setWeatherData(response.data);
+
+      // Fetch forecast data for the next 5 days
+      const forecastResponse = await axios.get(`http://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}`);
+      const filteredForecast = filterForecastData(forecastResponse.data.list);
+      setForecastData(filteredForecast);
+
+      setCityName(city);
+      setShowSearch(false);
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+    }
+  };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.header}>
         <Text style={styles.cityName}>{cityName}</Text>
         <TouchableOpacity onPress={() => setShowSearch(true)}>
@@ -80,51 +103,59 @@ export default function WeatherScreen() {
         </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.body}>
-          <Text style={styles.temperature}>Temperature: {temperature}°C</Text>
-          <Text style={styles.description}>Description: {weatherData.weather[0].description}</Text>
-        </View>
-        <View style={styles.weatherDetailsContainer}>
-          <View style={styles.weatherDetailCard}>
-            <Text style={styles.weatherDetailLabel}>Apparent Temperature:</Text>
-            <Text style={styles.weatherDetailValue}>{apparentTemperature}°C</Text>
-          </View>
-          <View style={styles.weatherDetailCard}>
-            <Text style={styles.weatherDetailLabel}>Humidity:</Text>
-            <Text style={styles.weatherDetailValue}>{humidity}%</Text>
+        <View style={styles.weatherContainer}>
+          <Text style={styles.temperature}>{temperature}°C</Text>
+          <View style={styles.weatherDetails}>
+            <Text style={styles.description}>{weatherData.weather[0].description}</Text>
           </View>
         </View>
-        <View style={styles.weatherDetailsContainer}>
-          <View style={styles.weatherDetailCard}>
-            <Text style={styles.weatherDetailLabel}>Wind:</Text>
-            <Text style={styles.weatherDetailValue}>{windSpeed} km/h {windDirection} wind</Text>
-          </View>
-          <View style={styles.weatherDetailCard}>
-            <Text style={styles.weatherDetailLabel}>UV Index:</Text>
-            <Text style={styles.weatherDetailValue}>{uvIndex}</Text>
+        <View style={styles.todayWeatherCard}>
+          <Text style={styles.todayWeatherTitle}>Today's Weather Details</Text>
+          <View style={styles.todayWeatherDetails}>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Apparent Temperature</Text>
+              <Text style={styles.weatherDetailValue}>{Math.round(weatherData.main.feels_like - 273.15)}°C</Text>
+            </View>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Humidity</Text>
+              <Text style={styles.weatherDetailValue}>{weatherData.main.humidity}%</Text>
+            </View>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Wind Direction</Text>
+              <Text style={styles.weatherDetailValue}>{getWindDirection(weatherData.wind.deg)}</Text>
+            </View>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Visibility</Text>
+              <Text style={styles.weatherDetailValue}>{(weatherData.visibility / 1000).toFixed(2)} km</Text>
+            </View>
+            <View style={styles.weatherDetailCard}>
+              <Text style={styles.weatherDetailLabel}>Air Pressure</Text>
+              <Text style={styles.weatherDetailValue}>{weatherData.main.pressure} hPa</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.weatherDetailsContainer}>
-          <View style={styles.weatherDetailCard}>
-            <Text style={styles.weatherDetailLabel}>Visibility:</Text>
-            <Text style={styles.weatherDetailValue}>{visibility} km</Text>
+        {forecastData.map((forecast, index) => (
+          <View key={index} style={styles.forecastItem}>
+            <Text style={styles.forecastDate}>{forecast.dt_txt.split(' ')[0].split('-').slice(-1)[0]}</Text>
+            <View style={styles.forecastDetails}>
+              <Text style={styles.forecastDescription}>{forecast.weather[0].description}</Text>
+              <Text style={styles.forecastTemperature}>{Math.round(forecast.main.temp - 273.15)}°C</Text>
+            </View>
           </View>
-          <View style={styles.weatherDetailCard}>
-            <Text style={styles.weatherDetailLabel}>Air Pressure:</Text>
-            <Text style={styles.weatherDetailValue}>{airPressure} hPa</Text>
-          </View>
-        </View>
+        ))}
       </ScrollView>
+      <TouchableOpacity style={styles.infoButton} onPress={openInBrowser}>
+        <Text style={styles.infoButtonText}>More Info</Text>
+      </TouchableOpacity>
       <Modal visible={showSearch} animationType="slide">
         <View style={styles.modalContainer}>
           <TouchableOpacity style={styles.closeButton} onPress={() => setShowSearch(false)}>
             <Ionicons name="close" size={24} color="black" />
           </TouchableOpacity>
-          {/* Replace SearchScreen with your actual search component */}
           <SearchScreen onSubmit={handleSearch} />
         </View>
       </Modal>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -137,50 +168,58 @@ const getWindDirection = (degree) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
     paddingTop: 30,
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'space-between', // Add space between city name and search icon
     marginBottom: 20,
-    paddingHorizontal: 20, // Add horizontal padding for better spacing
   },
   cityName: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   scrollViewContent: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  body: {
-    width: '100%',
+  weatherContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 20,
   },
   temperature: {
-    fontSize: 18,
+    fontSize: 64,
+    fontWeight: 'bold',
+  },
+  weatherDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   description: {
-    fontSize: 16,
+    fontSize: 20,
+    textTransform: 'capitalize',
   },
-  weatherDetailsContainer: {
+  todayWeatherCard: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    padding: 20,
+    marginBottom: 20,
+  },
+  todayWeatherTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  todayWeatherDetails: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 10, // Add some space between rows
-    width: '100%',
-    paddingHorizontal: 20, // Add horizontal padding for better spacing
   },
   weatherDetailCard: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 10,
-    width: '48%', // Adjust width to fit two cards per row with space between them
+    width: '48%',
+    marginBottom: 10,
   },
   weatherDetailLabel: {
     fontSize: 16,
@@ -189,6 +228,40 @@ const styles = StyleSheet.create({
   },
   weatherDetailValue: {
     fontSize: 16,
+  },
+  forecastItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  forecastDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  forecastDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  forecastDescription: {
+    fontSize: 16,
+    textTransform: 'capitalize',
+    marginRight: 10,
+  },
+  forecastTemperature: {
+    fontSize: 16,
+  },
+  infoButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  infoButtonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
@@ -201,3 +274,4 @@ const styles = StyleSheet.create({
     right: 20,
   },
 });
+
